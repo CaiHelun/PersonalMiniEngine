@@ -11,7 +11,9 @@ extern "C"
 #endif
 
 #include <iostream>
+#include "imgui.h"
 #include "imgui_impl_sdl.h"
+#include "imgui_impl_opengl3.h"
 
 #undef main
 
@@ -79,6 +81,12 @@ EventFallback ProcessEvent(SDL_Window*window,SDL_Event event)
 
 int main()
 {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+
     SDL_Init(SDL_INIT_VIDEO);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
@@ -107,6 +115,9 @@ int main()
     SDL_GLContext glContext = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, glContext);
     SDL_GL_SetSwapInterval(1);
+
+    ImGui_ImplSDL2_InitForOpenGL(window, &glContext);
+    ImGui_ImplOpenGL3_Init();
 
 	if (!gladLoadGL())
 	{
@@ -190,6 +201,11 @@ int main()
     bool quit = false;
     for (; !quit;) 
     {
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDL2_NewFrame();
+        ImGui::NewFrame();
+        ImGui::ShowDemoWindow();
+
         SDL_Event event;
         while (SDL_PollEvent(&event)) 
         {
@@ -213,6 +229,9 @@ int main()
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
+        
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(window);
     }
 
@@ -222,6 +241,10 @@ int main()
     SDL_GL_DeleteContext(glContext);
     SDL_DestroyWindow(window);
     SDL_Quit();
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
+
     
     return 0;
 }

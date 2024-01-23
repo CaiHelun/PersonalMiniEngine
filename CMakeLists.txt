@@ -9,20 +9,23 @@ find_package(OpenGL REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# 包含项目头文件
-include_directories(${PROJECT_SOURCE_DIR}/include)
-include_directories(${PROJECT_SOURCE_DIR}/include/imgui)
-include_directories(${PROJECT_SOURCE_DIR}/include/glad)
-include_directories(${PROJECT_SOURCE_DIR}/include/SDL2)
+file(GLOB_RECURSE IMGUIFILES
+${PROJECT_SOURCE_DIR}/IMGUI/include/*.h
+${PROJECT_SOURCE_DIR}/IMGUI/source/*.c*
+)
+source_group(TREE ${PROJECT_SOURCE_DIR}/ FILES ${IMGUIFILES})
 
-add_library(IMGUI STATIC
-    ${PROJECT_SOURCE_DIR}/ThirdParty/imgui/imgui.cpp
-    ${PROJECT_SOURCE_DIR}/ThirdParty/imgui/imgui_demo.cpp
-    ${PROJECT_SOURCE_DIR}/ThirdParty/imgui/imgui_draw.cpp
-    ${PROJECT_SOURCE_DIR}/ThirdParty/imgui/imgui_impl_opengl3.cpp
-    ${PROJECT_SOURCE_DIR}/ThirdParty/imgui/imgui_impl_sdl.cpp
-    ${PROJECT_SOURCE_DIR}/ThirdParty/imgui/imgui_tables.cpp
-    ${PROJECT_SOURCE_DIR}/ThirdParty/imgui/imgui_widgets.cpp
+add_library(IMGUI STATIC ${IMGUIFILES})
+
+target_include_directories(IMGUI PUBLIC
+    ${PROJECT_SOURCE_DIR}/IMGUI/include
+)
+
+# 包含项目头文件
+include_directories(
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/glad
+    ${PROJECT_SOURCE_DIR}/include/SDL2
 )
 
 set(SDL2_PATH ${PROJECT_SOURCE_DIR}/ThirdParty/SDL2/lib/x64)
