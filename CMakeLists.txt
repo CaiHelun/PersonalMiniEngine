@@ -39,10 +39,13 @@ target_link_libraries(IMGUI
     OpenGL::GL
 )
 
+file(GLOB_RECURSE ENGINEFILES
+${PROJECT_SOURCE_DIR}/Engine/*.h
+${PROJECT_SOURCE_DIR}/Engine/*.c*
+)
+source_group(TREE ${PROJECT_SOURCE_DIR}/ FILES ${ENGINEFILES})
 # 生成可执行文件
-add_executable(${PROJECT_NAME} 
-    ./main.cpp 
-    ./glad.c
+add_executable(${PROJECT_NAME} ${ENGINEFILES}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE IMGUI)
