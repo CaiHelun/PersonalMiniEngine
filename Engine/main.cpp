@@ -14,6 +14,7 @@ extern "C"
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
+#include "Shader.h"
 
 #undef main
 
@@ -21,26 +22,6 @@ void HandleResizeEvent(SDL_Window* window, int width, int height)
 {
     glViewport(0, 0, width, height);
 }
-
-const char* vertexShader = R"(
-    #version 330
-    layout (location = 0) in vec3 aPos;
-
-    void main()
-    {
-        gl_Position = vec4(aPos.x,aPos.y,aPos.z,1.0);
-    }
-)";
-
-const char* fragShader = R"(
-    #version 330 
-    out vec4 FragColor;
-
-    void main()
-    {
-        FragColor=vec4(1.0f,0.5f,0.2f,1.0f);
-    }
-)";
 
 enum class EventFallback
 {
@@ -124,44 +105,9 @@ int main()
         std::cout << "glad Load Failed!" << std::endl;
 		return -1;
 	}
-
-    unsigned int VS;
-    VS = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(VS, 1, &vertexShader, nullptr);
-    glCompileShader(VS);
-
-    int shaderCompileSuccess;
-    char infoLog[512];
-    glGetShaderiv(VS, GL_COMPILE_STATUS, &shaderCompileSuccess);
-    if (!shaderCompileSuccess)
-    {
-        glGetShaderInfoLog(VS, 512, nullptr, infoLog);
-        std::cout << "Error::Shader::Vertex::Compilatioion_Failed\n" << infoLog << std::endl;
-    }
-
-    unsigned int FS;
-    FS = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(FS, 1, &fragShader, nullptr);
-    glCompileShader(FS);
-
-	glGetShaderiv(FS, GL_COMPILE_STATUS, &shaderCompileSuccess);
-	if (!shaderCompileSuccess)
-	{
-		glGetShaderInfoLog(FS, 512, nullptr, infoLog);
-		std::cout << "Error::Shader::Vertex::Compilatioion_Failed\n" << infoLog << std::endl;
-	}
-
-    unsigned int shaderProgram;
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, VS);
-    glAttachShader(shaderProgram, FS);
-    glLinkProgram(shaderProgram);
-
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &shaderCompileSuccess);
-    if (!shaderCompileSuccess)
-    {
-        glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
-    }
+    std::string vertexPath = "../Engine/Shader/VertexShader.vert";
+    std::string fragPath = "../Engine/Shader/FragShader.frag";
+    Shader shader(vertexPath.c_str(), fragPath.c_str());
 
     float vertices[] = {
     0.5f, 0.5f, 0.0f,   // ÓÒÉÏ½Ç
@@ -195,8 +141,6 @@ int main()
     // 4. ½â°óVAO
     glBindVertexArray(0);
 
-	glDeleteShader(VS);
-	glDeleteShader(FS);
 
     bool quit = false;
     for (; !quit;) 
@@ -225,7 +169,7 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shaderProgram);
+        shader.UseShaderProgram();
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
@@ -237,7 +181,6 @@ int main()
 
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
-	glDeleteProgram(shaderProgram);
     SDL_GL_DeleteContext(glContext);
     SDL_DestroyWindow(window);
     SDL_Quit();

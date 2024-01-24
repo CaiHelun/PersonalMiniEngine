@@ -42,6 +42,8 @@ target_link_libraries(IMGUI
 file(GLOB_RECURSE ENGINEFILES
 ${PROJECT_SOURCE_DIR}/Engine/*.h
 ${PROJECT_SOURCE_DIR}/Engine/*.c*
+${PROJECT_SOURCE_DIR}/Engine/Shader/*.vert
+${PROJECT_SOURCE_DIR}/Engine/Shader/*.frag
 )
 source_group(TREE ${PROJECT_SOURCE_DIR}/ FILES ${ENGINEFILES})
 # 生成可执行文件
