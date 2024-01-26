@@ -20,49 +20,119 @@ extern "C"
 #define STB_IMAGE_IMPLEMENTATION
 #include "Image/stb_image.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include "glm/gtc/type_ptr.hpp"
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+float deltaTime = 0.0f; // 当前帧与上一帧的时间差
+float lastFrame = 0.0f; // 上一帧的时间
+bool PressKeyW = false;
+bool PressKeyS = false;
+bool PressKeyA = false;
+bool PressKeyD = false;
+float yaw = .0f;
+float pitch = .0f;
+float sensitivity = 0.05f;
+float lastX = 400, lastY = 300;
 
 void HandleResizeEvent(SDL_Window* window, int width, int height)
 {
     glViewport(0, 0, width, height);
 }
 
-enum class EventFallback
-{
-    EventNone,
-    EventQuit
-};
 
-EventFallback ProcessEvent(SDL_Window*window,SDL_Event event)
+void ProcessEventInScene(SDL_Window*window,SDL_Event event)
 {
-	switch (event.type)
-	{
-	case SDL_QUIT:
-        return EventFallback::EventQuit;
-	case SDL_WINDOWEVENT:
-	{
-		switch (event.window.event)
+    float cameraSpeed = 2.5f * deltaTime;
+    switch (event.type)
+    {
+    case SDL_MOUSEMOTION:
+    {
+        float xOffset = event.motion.x - lastX;
+        float yOffset = lastY - event.motion.y;
+        lastX = event.motion.x;
+        lastY = event.motion.y;
+
+        xOffset *= sensitivity;
+        yOffset *= sensitivity;
+        yaw += xOffset;
+        pitch += yOffset;
+        if (pitch > 89.0f)
+            pitch = 89.0f;
+        if (pitch < -89.0f)
+            pitch = -89.0f;
+        break;
+    }
+    case SDL_KEYDOWN:
+    {
+        switch (event.key.keysym.sym)
+        {
+        case SDLK_w:
+        {
+            PressKeyW = true;
+            break;
+        }
+        case SDLK_s:
+        {
+            PressKeyS = true;
+            break;
+        }
+        case SDLK_a:
+        {
+            PressKeyA = true;
+            break;
+        }
+        case SDLK_d:
+        {
+            PressKeyD = true;
+			break;
+        }
+        default:
+            break;
+        }
+        break;
+    }
+    case SDL_KEYUP:
+    {
+		switch (event.key.keysym.sym)
 		{
-		case SDL_WINDOWEVENT_CLOSE:
+		case SDLK_w:
 		{
-			if (event.window.windowID == SDL_GetWindowID(window))
-                return EventFallback::EventQuit;
+			PressKeyW = false;
 			break;
 		}
-		case SDL_WINDOWEVENT_RESIZED:
-			HandleResizeEvent(window, event.window.data1, event.window.data2);
+		case SDLK_s:
+		{
+			PressKeyS = false;
 			break;
+		}
+		case SDLK_a:
+		{
+			PressKeyA = false;
+			break;
+		}
+		case SDLK_d:
+		{
+			PressKeyD = false;
+			break;
+		}
 		default:
 			break;
 		}
-		break;
-	}
-	default:
-		break;
-	}
-    return EventFallback::EventNone;
+        break;
+    }
+    default:
+        break;
+    }
+
+
+    if (PressKeyW)
+        cameraPos += cameraSpeed * cameraFront;
+    if (PressKeyS)
+        cameraPos -= cameraSpeed * cameraFront;
+    if (PressKeyA)
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (PressKeyD)
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 }
 
 
@@ -115,13 +185,62 @@ int main()
     std::string fragPath = "../Engine/Shader/FragShader.frag";
     Shader shader(vertexPath.c_str(), fragPath.c_str());
 
-    float vertices[] = {
-		//     ---- 位置 ----       ---- 颜色 ----     - 纹理坐标 -
-		 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // 右上
-		 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // 右下
-		-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // 左下
-		-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // 左上
-    };
+	float vertices[] = {
+	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+	 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+	-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
+
+	glm::vec3 cubePositions[] = {
+  glm::vec3(0.0f,  0.0f,  0.0f),
+  glm::vec3(2.0f,  5.0f, -15.0f),
+  glm::vec3(-1.5f, -2.2f, -2.5f),
+  glm::vec3(-3.8f, -2.0f, -12.3f),
+  glm::vec3(2.4f, -0.4f, -3.5f),
+  glm::vec3(-1.7f,  3.0f, -7.5f),
+  glm::vec3(1.3f, -2.0f, -2.5f),
+  glm::vec3(1.5f,  2.0f, -2.5f),
+  glm::vec3(1.5f,  0.2f, -1.5f),
+  glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
 	unsigned int indices[] = {
 		0, 1, 3, // 第一个三角形
 		1, 2, 3  // 第二个三角形
@@ -163,7 +282,7 @@ int main()
 
     unsigned int VBO, VAO, IBO;
 	glGenBuffers(1, &VBO);
-    glGenBuffers(1, &IBO);
+    //glGenBuffers(1, &IBO);
 	glGenVertexArrays(1, &VAO);
 
     // 1. 绑定VAO
@@ -172,16 +291,16 @@ int main()
     // 2. 把顶点数组复制到缓冲中供OpenGL使用
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // 3. 设置顶点属性指针
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
+	/*glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);*/
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     // 4. 解绑VAO
     glBindVertexArray(0);
@@ -193,42 +312,75 @@ int main()
 	/*glm::mat4 trans(1.0f);
 	trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(.0f, .0f, 1.0f));
 	trans = glm::scale(trans, glm::vec3(0.5f, 0.5f, 0.5f));*/
-    unsigned int transformLoc = glGetUniformLocation(shader.ShaderProgramID, "Transform");
     
-    glBindVertexArray(VAO);
+    glEnable(GL_DEPTH_TEST);
 
-    float degree = .0f;
+    glm::mat4 model(1.0f);
+    model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, .0f, .0f));
+
+    glm::mat4 view(1.0f);
+    view = glm::lookAt(cameraPos, cameraFront, cameraUp);
+
+    glm::mat4 proj(1.0f);
+    proj = glm::perspective(glm::radians(45.0f), (float)width / height, 0.1f, 100.0f);
+
+    float radius = 10.0f;
+    SDL_SetRelativeMouseMode(SDL_TRUE);
     bool quit = false;
-    for (; !quit;) 
+    for (; !quit;)
     {
+        float currentFrame = (float)SDL_GetTicks() / 1000.0f;
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
         //ImGui::ShowDemoWindow();
+		glm::vec3 front;
+		front.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
+		front.y = sin(glm::radians(pitch));
+		front.z = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
+		cameraFront = glm::normalize(front);
 
-
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glm::mat4 trans(1.0f);
-		trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
-		trans = glm::rotate(trans, glm::radians(degree), glm::vec3(0.0f, 0.0f, 1.0f));
-		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		
+        glBindVertexArray(VAO);
+        view = glm::lookAt(cameraPos, cameraFront, cameraUp);
+		shader.SetUniformMat4("view", view);
+		shader.SetUniformMat4("proj", proj);
+		for (unsigned int i = 0; i < 10; i++)
+		{
+			glm::mat4 model(1.0f);
+			model = glm::translate(model, cubePositions[i]);
+			float angle = 20.0f * i;
+			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			shader.SetUniformMat4("model", model);
 
-        ImGui::SliderFloat("Degree", &degree, -180.0f, 180.0f);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
+        glBindVertexArray(0);
+		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        //glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		/*float dx = glm::cos((float)SDL_GetTicks() / 1000) * radius;
+		float dz = glm::sin((float)SDL_GetTicks() / 1000) * radius;
+		view = glm::lookAt(glm::vec3(dx, .0f, dz), glm::vec3(.0f), glm::vec3(.0f, 1.0f, .0f));*/
+
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		SDL_Event event;
 		while (SDL_PollEvent(&event))
 		{
             ImGui_ImplSDL2_ProcessEvent(&event);
+            ProcessEventInScene(window, event);
+            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
+                quit = true;
             break;
 		}
         SDL_GL_SwapWindow(window);
     }
-    glBindVertexArray(0);
 
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
