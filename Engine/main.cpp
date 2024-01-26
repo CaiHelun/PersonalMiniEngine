@@ -195,47 +195,40 @@ int main()
 	trans = glm::scale(trans, glm::vec3(0.5f, 0.5f, 0.5f));*/
     unsigned int transformLoc = glGetUniformLocation(shader.ShaderProgramID, "Transform");
     
+    glBindVertexArray(VAO);
 
+    float degree = .0f;
     bool quit = false;
     for (; !quit;) 
     {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
-        ImGui::ShowDemoWindow();
+        //ImGui::ShowDemoWindow();
 
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) 
-        {
-            EventFallback eventFallback = ProcessEvent(window, event);
-            switch (eventFallback)
-            {
-            case EventFallback::EventNone:
-                break;
-            case EventFallback::EventQuit:
-                quit = true;
-                break;
-            default:
-                break;
-            }
-        }
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glm::mat4 trans(1.0f);
-		trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
-		trans = glm::rotate(trans, (float)SDL_GetTicks()/1000, glm::vec3(0.0f, 0.0f, 1.0f));
-        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glm::mat4 trans(1.0f);
+		trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+		trans = glm::rotate(trans, glm::radians(degree), glm::vec3(0.0f, 0.0f, 1.0f));
+		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		
 
-        glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
-        
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        ImGui::SliderFloat("Degree", &degree, -180.0f, 180.0f);
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		SDL_Event event;
+		while (SDL_PollEvent(&event))
+		{
+            ImGui_ImplSDL2_ProcessEvent(&event);
+            break;
+		}
         SDL_GL_SwapWindow(window);
     }
+    glBindVertexArray(0);
 
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
