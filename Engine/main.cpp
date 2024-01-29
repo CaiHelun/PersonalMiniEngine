@@ -156,7 +156,7 @@ int main()
     std::string vertexPath = "../Engine/Shader/VertexShader.vert";
     std::string fragPath = "../Engine/Shader/FragShader.frag";
     Shader shader(vertexPath.c_str(), fragPath.c_str());
-	Camera* camera = new Camera();
+	Camera* camera = new Camera(glm::vec3(.0f, .0f, 3.0f));
 
 	float vertices[] = {
 	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
