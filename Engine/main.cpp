@@ -15,6 +15,7 @@ extern "C"
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
 #include "Shader.h"
+#include "Camera.h"
 
 #undef main
 #define STB_IMAGE_IMPLEMENTATION
@@ -25,14 +26,11 @@ glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 float deltaTime = 0.0f; // 当前帧与上一帧的时间差
 float lastFrame = 0.0f; // 上一帧的时间
-bool PressKeyW = false;
-bool PressKeyS = false;
-bool PressKeyA = false;
-bool PressKeyD = false;
-float yaw = .0f;
-float pitch = .0f;
-float sensitivity = 0.05f;
-float lastX = 400, lastY = 300;
+int lastX = 400, lastY = 300;
+bool firstMouse = true;
+bool rightButtonDrag = false;
+bool middleButtonDrag = false;
+bool leftButtonDrag = false;
 
 void HandleResizeEvent(SDL_Window* window, int width, int height)
 {
@@ -40,99 +38,73 @@ void HandleResizeEvent(SDL_Window* window, int width, int height)
 }
 
 
-void ProcessEventInScene(SDL_Window*window,SDL_Event event)
+void ProcessEventInScene(Camera* camera, SDL_Event event)
 {
-    float cameraSpeed = 2.5f * deltaTime;
-    switch (event.type)
-    {
-    case SDL_MOUSEMOTION:
-    {
-        float xOffset = event.motion.x - lastX;
-        float yOffset = lastY - event.motion.y;
-        lastX = event.motion.x;
-        lastY = event.motion.y;
-
-        xOffset *= sensitivity;
-        yOffset *= sensitivity;
-        yaw += xOffset;
-        pitch += yOffset;
-        if (pitch > 89.0f)
-            pitch = 89.0f;
-        if (pitch < -89.0f)
-            pitch = -89.0f;
-        break;
-    }
-    case SDL_KEYDOWN:
-    {
-        switch (event.key.keysym.sym)
-        {
-        case SDLK_w:
-        {
-            PressKeyW = true;
-            break;
-        }
-        case SDLK_s:
-        {
-            PressKeyS = true;
-            break;
-        }
-        case SDLK_a:
-        {
-            PressKeyA = true;
-            break;
-        }
-        case SDLK_d:
-        {
-            PressKeyD = true;
-			break;
-        }
-        default:
-            break;
-        }
-        break;
-    }
-    case SDL_KEYUP:
-    {
-		switch (event.key.keysym.sym)
+	switch (event.type)
+	{
+	case SDL_MOUSEBUTTONDOWN:
+	{
+		switch (event.button.button)
 		{
-		case SDLK_w:
-		{
-			PressKeyW = false;
+		case SDL_BUTTON_RIGHT:
+			rightButtonDrag = true;
 			break;
-		}
-		case SDLK_s:
-		{
-			PressKeyS = false;
+		case SDL_BUTTON_LEFT:
+			leftButtonDrag = true;
 			break;
-		}
-		case SDLK_a:
-		{
-			PressKeyA = false;
+		case SDL_BUTTON_MIDDLE:
+			middleButtonDrag = true;
 			break;
-		}
-		case SDLK_d:
-		{
-			PressKeyD = false;
-			break;
-		}
 		default:
 			break;
 		}
-        break;
-    }
-    default:
-        break;
-    }
-
-
-    if (PressKeyW)
-        cameraPos += cameraSpeed * cameraFront;
-    if (PressKeyS)
-        cameraPos -= cameraSpeed * cameraFront;
-    if (PressKeyA)
-        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-    if (PressKeyD)
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		break;
+	}
+	case SDL_MOUSEBUTTONUP:
+	{
+		switch (event.button.button)
+		{
+		case SDL_BUTTON_RIGHT:
+			rightButtonDrag = false;
+			break;
+		case SDL_BUTTON_LEFT:
+			leftButtonDrag = false;
+			break;
+		case SDL_BUTTON_MIDDLE:
+			middleButtonDrag = false;
+			break;
+		default:
+			break;
+		}
+		break;
+	}
+	case SDL_MOUSEMOTION:
+	{
+		int curPosX = 0;
+		int curPosY = 0;
+		SDL_GetMouseState(&curPosX, &curPosY);
+		int xoffset = curPosX - lastX;
+		int yoffset = curPosY - lastY;
+		lastX = curPosX;
+		lastY = curPosY;
+		if (rightButtonDrag)
+		{
+			camera->OnMouseRightButtonDrag(xoffset, yoffset);
+		}
+		else if (middleButtonDrag)
+		{
+			camera->OnMouseMiddleButtonDrag(xoffset, yoffset);
+		}
+		break;
+	}
+	case SDL_MOUSEWHEEL:
+	{
+		camera->OnMouseWheel(event.wheel.y);
+		break;
+	}
+	default:
+		break;
+	}
 }
 
 
@@ -184,6 +156,7 @@ int main()
     std::string vertexPath = "../Engine/Shader/VertexShader.vert";
     std::string fragPath = "../Engine/Shader/FragShader.frag";
     Shader shader(vertexPath.c_str(), fragPath.c_str());
+	Camera* camera = new Camera();
 
 	float vertices[] = {
 	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -308,24 +281,18 @@ int main()
 	shader.UseShaderProgram();
     shader.SetUniformInt("ourTexture", 0);
     shader.SetUniformInt("ourTexture2", 1);
-
-	/*glm::mat4 trans(1.0f);
-	trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(.0f, .0f, 1.0f));
-	trans = glm::scale(trans, glm::vec3(0.5f, 0.5f, 0.5f));*/
     
     glEnable(GL_DEPTH_TEST);
 
     glm::mat4 model(1.0f);
     model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, .0f, .0f));
 
-    glm::mat4 view(1.0f);
-    view = glm::lookAt(cameraPos, cameraFront, cameraUp);
+	glm::mat4 view = camera->GetViewMatrix();
 
     glm::mat4 proj(1.0f);
     proj = glm::perspective(glm::radians(45.0f), (float)width / height, 0.1f, 100.0f);
 
     float radius = 10.0f;
-    SDL_SetRelativeMouseMode(SDL_TRUE);
     bool quit = false;
     for (; !quit;)
     {
@@ -337,17 +304,12 @@ int main()
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
         //ImGui::ShowDemoWindow();
-		glm::vec3 front;
-		front.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
-		front.y = sin(glm::radians(pitch));
-		front.z = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
-		cameraFront = glm::normalize(front);
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glBindVertexArray(VAO);
-        view = glm::lookAt(cameraPos, cameraFront, cameraUp);
+		view = camera->GetViewMatrix();
 		shader.SetUniformMat4("view", view);
 		shader.SetUniformMat4("proj", proj);
 		for (unsigned int i = 0; i < 10; i++)
@@ -364,17 +326,13 @@ int main()
 		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         //glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		/*float dx = glm::cos((float)SDL_GetTicks() / 1000) * radius;
-		float dz = glm::sin((float)SDL_GetTicks() / 1000) * radius;
-		view = glm::lookAt(glm::vec3(dx, .0f, dz), glm::vec3(.0f), glm::vec3(.0f, 1.0f, .0f));*/
-
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		SDL_Event event;
 		while (SDL_PollEvent(&event))
 		{
             ImGui_ImplSDL2_ProcessEvent(&event);
-            ProcessEventInScene(window, event);
+            ProcessEventInScene(camera, event);
             if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
                 quit = true;
             break;
@@ -390,7 +348,8 @@ int main()
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
-
+	delete camera;
+	camera = nullptr;
     
     return 0;
 }
