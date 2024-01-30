@@ -266,9 +266,6 @@ int main()
 
 	lightShader.UseShaderProgram();
 	shader.UseShaderProgram();
-
-    //shader.SetUniformInt("ourTexture", 0);
-    //shader.SetUniformInt("ourTexture2", 1);
     
     glEnable(GL_DEPTH_TEST);
 
