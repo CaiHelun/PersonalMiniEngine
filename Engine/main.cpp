@@ -271,8 +271,8 @@ int main()
     glm::mat4 proj(1.0f);
     proj = glm::perspective(glm::radians(45.0f), (float)width / height, 0.1f, 100.0f);
 
-	shader.SetUniformVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
 	shader.SetUniformVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+	glm::vec3 lightColor;
 
 	glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
     bool quit = false;
@@ -295,6 +295,21 @@ int main()
 		shader.SetUniformMat4("model", model);
 		shader.SetUniformVec3("lightPos", lightPos);
 		shader.SetUniformVec3("viewPos", camera->mCameraPosition);
+		shader.SetUniformVec3("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
+		shader.SetUniformVec3("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
+		shader.SetUniformVec3("material.specular", glm::vec3(0.5f, 0.5f, 0.5f));
+		shader.SetUniformFloat("material.shininess", 32.0f);
+
+		lightColor.x = sin((float)SDL_GetTicks() / 1000.0f * 2.0f);
+		lightColor.y = sin((float)SDL_GetTicks() / 1000.0f * 0.7f);
+		lightColor.z = sin((float)SDL_GetTicks() / 1000.0f * 1.3f);
+		glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);
+		glm::vec3 ambientColor = lightColor * glm::vec3(0.2f);
+
+		shader.SetUniformVec3("light.position", lightPos);
+		shader.SetUniformVec3("light.ambient", ambientColor);
+		shader.SetUniformVec3("light.diffuse", diffuseColor);
+		shader.SetUniformVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
 
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
