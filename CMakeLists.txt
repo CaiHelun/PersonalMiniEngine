@@ -26,6 +26,7 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/glad
     ${PROJECT_SOURCE_DIR}/include/SDL2
+    ${PROJECT_SOURCE_DIR}/include/assimp
 )
 
 set(SDL2_PATH ${PROJECT_SOURCE_DIR}/ThirdParty/SDL2/lib/x64)
@@ -34,8 +35,15 @@ set_target_properties(SDL2 PROPERTIES
     IMPORTED_IMPLIB ${SDL2_PATH}/SDL2.lib
 )
 
+set(ASSIMP_PATH ${PROJECT_SOURCE_DIR}/ThirdParty/assimp)
+add_library(ASSIMP SHARED IMPORTED)
+set_target_properties(ASSIMP PROPERTIES
+    IMPORTED_IMPLIB ${ASSIMP_PATH}/assimp-vc142-mt.lib
+)
+
 target_link_libraries(IMGUI
     SDL2
+    ASSIMP
     OpenGL::GL
 )
 
@@ -44,8 +52,7 @@ include_directories(${PROJECT_SOURCE_DIR}/Engine/glm)
 file(GLOB_RECURSE ENGINEFILES
 ${PROJECT_SOURCE_DIR}/Engine/*.h
 ${PROJECT_SOURCE_DIR}/Engine/*.c*
-${PROJECT_SOURCE_DIR}/Engine/Shader/*.vert
-${PROJECT_SOURCE_DIR}/Engine/Shader/*.frag
+${PROJECT_SOURCE_DIR}/Engine/Shader/*.glsl
 ${PROJECT_SOURCE_DIR}/Engine/Image/*.h
 ${PROJECT_SOURCE_DIR}/Engine/Image/*.c*
 )
@@ -58,7 +65,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE IMGUI)
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                       "${SDL2_PATH}/SDL2.dll"
+                       "${SDL2_PATH}/SDL2.dll" "${ASSIMP_PATH}/assimp-vc142-mt.dll"
                        $<TARGET_FILE_DIR:${PROJECT_NAME}>)
 
 # # 链接第三方库

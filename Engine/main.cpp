@@ -16,6 +16,7 @@ extern "C"
 #include "imgui_impl_opengl3.h"
 #include "Shader.h"
 #include "Camera.h"
+#include "Editor/UIManager.h"
 
 #undef main
 #define STB_IMAGE_IMPLEMENTATION
@@ -110,12 +111,6 @@ void ProcessEventInScene(Camera* camera, SDL_Event event)
 
 int main()
 {
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-
     SDL_Init(SDL_INIT_VIDEO);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
@@ -140,23 +135,17 @@ int main()
         SDL_Quit();
         return -1;
     }
-
-    SDL_GLContext glContext = SDL_GL_CreateContext(window);
-    SDL_GL_MakeCurrent(window, glContext);
-    SDL_GL_SetSwapInterval(1);
-
-    ImGui_ImplSDL2_InitForOpenGL(window, &glContext);
-    ImGui_ImplOpenGL3_Init();
+	UIManager* uiManager = new UIManager(window, UIStyle::ALTERNATIVE_DARK_STYLE, "#version 330");
 
 	if (!gladLoadGL())
 	{
         std::cout << "glad Load Failed!" << std::endl;
 		return -1;
 	}
-    std::string vertexPath = "../Engine/Shader/VertexShader.glslinc";
-    std::string fragPath = "../Engine/Shader/FragShader.glslinc";
+    std::string vertexPath = "../Engine/Shader/VertexShader.glsl";
+    std::string fragPath = "../Engine/Shader/FragShader.glsl";
     Shader shader(vertexPath.c_str(), fragPath.c_str());
-	Shader lightShader("../Engine/Shader/LightBoxVert.glslinc", "../Engine/Shader/LightBoxFrag.glslinc");
+	Shader lightShader("../Engine/Shader/LightBoxVert.glsl", "../Engine/Shader/LightBoxFrag.glsl");
 	Camera* camera = new Camera(glm::vec3(.0f, .0f, 5.0f));
 
 	float vertices[] = {
@@ -203,6 +192,18 @@ int main()
 		-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
 		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
 	}; 
+	glm::vec3 cubePositions[] = {
+	glm::vec3(0.0f,  0.0f,  0.0f),
+	glm::vec3(2.0f,  5.0f, -15.0f),
+	glm::vec3(-1.5f, -2.2f, -2.5f),
+	glm::vec3(-3.8f, -2.0f, -12.3f),
+	glm::vec3(2.4f, -0.4f, -3.5f),
+	glm::vec3(-1.7f,  3.0f, -7.5f),
+	glm::vec3(1.3f, -2.0f, -2.5f),
+	glm::vec3(1.5f,  2.0f, -2.5f),
+	glm::vec3(1.5f,  0.2f, -1.5f),
+	glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
 
 	int textureWidth, textureHeight, channel;
 	stbi_set_flip_vertically_on_load(true);
@@ -279,16 +280,14 @@ int main()
 	shader.SetUniformInt("material.specular", 1);
 
 	glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+	glm::vec3 lightDir(.0f, .0f, -1.0f);
     bool quit = false;
     for (; !quit;)
     {
         float currentFrame = (float)SDL_GetTicks() / 1000.0f;
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
-
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL2_NewFrame();
-        ImGui::NewFrame();
+		uiManager->PreUpdate();
 
         glClearColor(.0f, .0f, .0f, .0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -296,14 +295,33 @@ int main()
 		view = camera->GetViewMatrix();
 		shader.SetUniformMat4("view", view);
 		shader.SetUniformMat4("proj", proj);
-		shader.SetUniformMat4("model", model);
+		//shader.SetUniformMat4("model", model);
 		shader.SetUniformVec3("viewPos", camera->mCameraPosition);
-		shader.SetUniformFloat("material.shininess", 64.0f);
+		shader.SetUniformFloat("material.shininess", 32.0f);
 
-		shader.SetUniformVec3("light.position", lightPos);
-		shader.SetUniformVec3("light.ambient", glm::vec3(0.2f));
-		shader.SetUniformVec3("light.diffuse", glm::vec3(0.5f));
-		shader.SetUniformVec3("light.specular", glm::vec3(1.0f));
+		shader.SetUniformVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+		shader.SetUniformVec3("dirLight.ambient", glm::vec3(0.05f, 0.05f, 0.05f));
+		shader.SetUniformVec3("dirLight.diffuse", glm::vec3(0.4f, 0.4f, 0.4f));
+		shader.SetUniformVec3("dirLight.specular", glm::vec3(0.5f, 0.5f, 0.5f));
+
+		shader.SetUniformVec3("pointLight.position", lightPos);
+		shader.SetUniformVec3("pointLight.ambient", glm::vec3(0.05f, 0.05f, 0.05f));
+		shader.SetUniformVec3("pointLight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
+		shader.SetUniformVec3("pointLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+		shader.SetUniformFloat("pointLight.constant", 1.0f);
+		shader.SetUniformFloat("pointLight.linear", 0.09f);
+		shader.SetUniformFloat("pointLight.quadratic", 0.032f);
+
+		shader.SetUniformVec3("spotLight.position", camera->mCameraPosition);
+		shader.SetUniformVec3("spotLight.direction", camera->mCameraFront);
+		shader.SetUniformVec3("spotLight.ambient", glm::vec3(0.2f));
+		shader.SetUniformVec3("spotLight.diffuse", glm::vec3(0.5f));
+		shader.SetUniformVec3("spotLight.specular", glm::vec3(1.0f));
+		shader.SetUniformFloat("spotLight.constant", 1.0f);
+		shader.SetUniformFloat("spotLight.linear", 0.09f);
+		shader.SetUniformFloat("spotLight.quadratic", 0.032f);
+		shader.SetUniformFloat("spotLight.cutOff", cos(glm::radians(12.5f)));
+		shader.SetUniformFloat("spotLight.outerCutOff", cos(glm::radians(17.5f)));
 
 		
 		glActiveTexture(GL_TEXTURE0);
@@ -312,10 +330,20 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, specularMap);
 
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		for (unsigned int i = 0; i < 10; i++)
+		{
+			glm::mat4 curModel(.0f);
+			curModel = glm::translate(model, cubePositions[i]);
+			float angle = 20.0f * i;
+			curModel = glm::rotate(curModel, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			shader.SetUniformMat4("model", curModel);
+
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
+		//glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		lightShader.UseShaderProgram();
-		glm::mat4 lightModel = glm::mat4();
+		glm::mat4 lightModel(1.0f);
 		lightModel = glm::translate(model, lightPos);
 		lightModel = glm::scale(lightModel, glm::vec3(0.2f));
 		lightShader.SetUniformMat4("view", view);
@@ -326,8 +354,7 @@ int main()
 
 		glBindVertexArray(0);
 
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		uiManager->PostUpdate();
 		SDL_Event event;
 		while (SDL_PollEvent(&event))
 		{
@@ -342,14 +369,12 @@ int main()
 
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
-    SDL_GL_DeleteContext(glContext);
     SDL_DestroyWindow(window);
     SDL_Quit();
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
+	delete uiManager;
 	delete camera;
 	camera = nullptr;
+	uiManager = nullptr;
     
     return 0;
 }
