@@ -17,6 +17,7 @@ extern "C"
 #include "Shader.h"
 #include "Camera.h"
 #include "Editor/UIManager.h"
+#include "mesh/AiModel.h"
 
 #undef main
 #define STB_IMAGE_IMPLEMENTATION
@@ -267,6 +268,8 @@ int main()
 
 	lightShader.UseShaderProgram();
 	shader.UseShaderProgram();
+
+	AiModel aiModel("asset/nanosuit.obj");
     
     glEnable(GL_DEPTH_TEST);
 
@@ -353,6 +356,8 @@ int main()
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		glBindVertexArray(0);
+
+		aiModel.Render(shader);
 
 		uiManager->PostUpdate();
 		SDL_Event event;
