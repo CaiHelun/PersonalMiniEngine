@@ -13,7 +13,26 @@ Mesh::~Mesh()
 
 void Mesh::Render(Shader& shader)
 {
+	unsigned int diffuseNum = 0;
+	unsigned int specularNum = 0;
+	for (size_t i = 0; i < mTextures.size(); ++i)
+	{
+		glActiveTexture(GL_TEXTURE0 + i);
+		std::string number;
+		if (mTextures[i].mTextureType == "diffuse_texture")
+			number = std::to_string(diffuseNum++);
+		else if (mTextures[i].mTextureType == "specular_texture")
+			number = std::to_string(specularNum++);
 
+		shader.SetUniformInt(std::string("material." + mTextures[i].mTextureType + number), i);
+		glBindTexture(GL_TEXTURE_2D, mTextures[i].mTextureID);
+	}
+
+	glActiveTexture(GL_TEXTURE0);
+
+	glBindVertexArray(VAO);
+	glDrawElements(GL_TRIANGLES, mIndices.size(), GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
 }
 
 void Mesh::_SetupMeshs()
