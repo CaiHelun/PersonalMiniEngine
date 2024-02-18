@@ -91,17 +91,17 @@ void ProcessEventInScene(Camera* camera, SDL_Event event)
 		lastY = curPosY;
 		if (rightButtonDrag)
 		{
-			camera->OnMouseRightButtonDrag(xoffset, yoffset);
+			camera->OnMouseRightButtonDrag((float)xoffset, (float)yoffset);
 		}
 		else if (middleButtonDrag)
 		{
-			camera->OnMouseMiddleButtonDrag(xoffset, yoffset);
+			camera->OnMouseMiddleButtonDrag((float)xoffset, (float)yoffset);
 		}
 		break;
 	}
 	case SDL_MOUSEWHEEL:
 	{
-		camera->OnMouseWheel(event.wheel.y);
+		camera->OnMouseWheel((float)event.wheel.y);
 		break;
 	}
 	default:
