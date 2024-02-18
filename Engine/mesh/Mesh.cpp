@@ -13,8 +13,8 @@ Mesh::~Mesh()
 
 void Mesh::Render(Shader& shader)
 {
-	unsigned int diffuseNum = 0;
-	unsigned int specularNum = 0;
+	unsigned int diffuseNum = 1;
+	unsigned int specularNum = 1;
 	for (size_t i = 0; i < mTextures.size(); ++i)
 	{
 		glActiveTexture(GL_TEXTURE0 + i);
@@ -46,7 +46,7 @@ void Mesh::_SetupMeshs()
 	glBufferData(GL_ARRAY_BUFFER, mVertices.size() * sizeof(MeshVertex), &mVertices[0], GL_STATIC_DRAW);
 	
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, mIndices.size() * sizeof(unsigned int), &mVertices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, mIndices.size() * sizeof(unsigned int), &mIndices[0], GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)0);

@@ -81,11 +81,13 @@ Mesh AiModel::_ProcessMesh(aiMesh* mesh, const aiScene* scene)
 		else
 			vertex.mTexCoord = glm::vec2(.0f);
 
-		for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
+		vertices.emplace_back(std::move(vertex));
+
+		for (unsigned int face_i = 0; face_i < mesh->mNumFaces; ++face_i)
 		{
-			aiFace face = mesh->mFaces[i];
-			for (unsigned int j = 0; j < face.mNumIndices; ++j)
-				indices.emplace_back(face.mIndices[j]);
+			aiFace face = mesh->mFaces[face_i];
+			for (unsigned int faceindex_i = 0; faceindex_i < face.mNumIndices; ++faceindex_i)
+				indices.emplace_back(face.mIndices[faceindex_i]);
 		}
 
 		if (mesh->mMaterialIndex >= 0)
@@ -98,6 +100,8 @@ Mesh AiModel::_ProcessMesh(aiMesh* mesh, const aiScene* scene)
 			textures.insert(textures.end(), specTex.begin(), specTex.end());
 		}
 	}
+
+	return Mesh(vertices, indices, textures);
 }
 
 std::vector<Texture> AiModel::_LoadMaterialTextures(aiMaterial* mat, aiTextureType type, const std::string& typeName)
@@ -111,7 +115,7 @@ std::vector<Texture> AiModel::_LoadMaterialTextures(aiMaterial* mat, aiTextureTy
 		bool alreadyLoad = false;
 		for (unsigned int j = 0; j < mTextureLoaded.size(); ++j)
 		{
-			if (std::strcmp(mTextureLoaded[i].mPath.c_str(), path.C_Str()) == 0)
+			if (std::strcmp(mTextureLoaded[j].mPath.c_str(), path.C_Str()) == 0)
 			{
 				textures.emplace_back(mTextureLoaded[i]);
 				alreadyLoad = true;
@@ -122,7 +126,7 @@ std::vector<Texture> AiModel::_LoadMaterialTextures(aiMaterial* mat, aiTextureTy
 		if (!alreadyLoad)
 		{
 			Texture texture;
-			texture.mTextureID = TextureFromFile(path.C_Str());
+			texture.mTextureID = TextureFromFile(path.C_Str(), mDirectory);
 			texture.mTextureType = typeName;
 			texture.mPath = path.C_Str();
 			textures.emplace_back(texture);
@@ -134,7 +138,7 @@ std::vector<Texture> AiModel::_LoadMaterialTextures(aiMaterial* mat, aiTextureTy
 }
 
 
-unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma = false)
+unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma)
 {
 	std::string fileName = std::string(path);
 
@@ -144,7 +148,7 @@ unsigned int TextureFromFile(const char* path, const std::string& directory, boo
 	glGenTextures(1, &textureId);
 
 	int width, height, channel;
-	unsigned char* data= stbi_load(fileName.c_str(), &width, &width, &channel, 0);
+	unsigned char* data = stbi_load(fileName.c_str(), &width, &height, &channel, 0);
 	if (data)
 	{
 		GLenum format;
