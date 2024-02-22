@@ -15,7 +15,7 @@ AiModel::~AiModel()
 
 void AiModel::Render(Shader& shader)
 {
-	for (auto mesh : mMeshes)
+	for (auto&& mesh : mMeshes)
 		mesh.Render(shader);
 }
 
@@ -66,10 +66,13 @@ Mesh AiModel::_ProcessMesh(aiMesh* mesh, const aiScene* scene)
 		float3.z = mesh->mVertices[i].z;
 		vertex.mPosition = float3;
 
-		float3.x = mesh->mNormals[i].x;
-		float3.y = mesh->mNormals[i].y;
-		float3.z = mesh->mNormals[i].z;
-		vertex.mNormal = float3;
+		if (mesh->mNormals)
+		{
+			float3.x = mesh->mNormals[i].x;
+			float3.y = mesh->mNormals[i].y;
+			float3.z = mesh->mNormals[i].z;
+			vertex.mNormal = float3;
+		}
 
 		if (mesh->mTextureCoords[0])
 		{

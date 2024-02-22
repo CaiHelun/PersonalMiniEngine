@@ -15,6 +15,7 @@ extern "C"
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
+#include "../tools/event/Event.h"
 
 enum class UIStyle
 {
@@ -38,8 +39,13 @@ public:
 	void Update();
 	void PostUpdate();
 
+	Tools::Event<int> testEvent;
+
 protected:
+	void _OnTestEvent(int testNum);
+
 private:
 	bool mDockingState = false;
 	SDL_GLContext mGlContext;
+	
 };

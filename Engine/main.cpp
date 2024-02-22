@@ -22,6 +22,7 @@ extern "C"
 #undef main
 #define STB_IMAGE_IMPLEMENTATION
 #include "Image/stb_image.h"
+#include <fstream>
 
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -136,7 +137,7 @@ int main()
         SDL_Quit();
         return -1;
     }
-	UIManager* uiManager = new UIManager(window, UIStyle::ALTERNATIVE_DARK_STYLE, "#version 330");
+	UIManager* uiManager = new UIManager(window, UIStyle::CLASSIC_STYLE, "#version 330");
 
 	if (!gladLoadGL())
 	{
@@ -159,7 +160,7 @@ int main()
 		lastFrame = currentFrame;
 		uiManager->PreUpdate();
 
-        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+        glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
@@ -174,10 +175,12 @@ int main()
 
 		aiModel.Render(modelShader);
 
+		uiManager->Update();
 		uiManager->PostUpdate();
 		SDL_Event event;
 		while (SDL_PollEvent(&event))
 		{
+			uiManager->testEvent.Invoke(10);
             ImGui_ImplSDL2_ProcessEvent(&event);
             ProcessEventInScene(camera, event);
             if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)

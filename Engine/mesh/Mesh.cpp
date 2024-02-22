@@ -17,21 +17,23 @@ void Mesh::Render(Shader& shader)
 	unsigned int specularNum = 1;
 	for (size_t i = 0; i < mTextures.size(); ++i)
 	{
-		glActiveTexture(GL_TEXTURE0 + i);
+		glActiveTexture(GLenum(GL_TEXTURE0 + i));
 		std::string number;
-		if (mTextures[i].mTextureType == "diffuse_texture")
+		std::string name = mTextures[i].mTextureType;
+		if (name == "diffuse_texture")
 			number = std::to_string(diffuseNum++);
-		else if (mTextures[i].mTextureType == "specular_texture")
+		else if (name == "specular_texture")
 			number = std::to_string(specularNum++);
 
-		shader.SetUniformInt(std::string("material." + mTextures[i].mTextureType + number), i);
+		name += number;
+		shader.SetUniformInt(name, (int)i);
 		glBindTexture(GL_TEXTURE_2D, mTextures[i].mTextureID);
 	}
 
 	glActiveTexture(GL_TEXTURE0);
 
 	glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, mIndices.size(), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, (GLsizei)mIndices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 }
 

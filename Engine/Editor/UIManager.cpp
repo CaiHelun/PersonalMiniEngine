@@ -1,4 +1,5 @@
 #include "UIManager.h"
+#include <Windows.h>
 
 UIManager::UIManager(SDL_Window* window, UIStyle style, const std::string& glslVersion)
 {
@@ -16,6 +17,7 @@ UIManager::UIManager(SDL_Window* window, UIStyle style, const std::string& glslV
 	SDL_GL_SetSwapInterval(1);
 	ImGui_ImplSDL2_InitForOpenGL(window, &mGlContext);
 	ImGui_ImplOpenGL3_Init();
+	testEvent.AddListener(std::bind(&UIManager::_OnTestEvent, this, std::placeholders::_1));
 }
 
 UIManager::~UIManager()
@@ -185,15 +187,69 @@ void UIManager::PreUpdate()
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplSDL2_NewFrame();
 	ImGui::NewFrame();
-	ImGui::ShowDemoWindow();
+	//ImGui::ShowDemoWindow();
 }
 
 void UIManager::Update()
 {
+	bool openFile = false;
+	if (ImGui::BeginMainMenuBar())
+	{
+		if (ImGui::BeginMenu("File"))
+		{
+			if (ImGui::MenuItem("Open"))
+			{
+				openFile = true;
+			}
+			if (ImGui::MenuItem("Save", "Ctrl+S"))
+			{
+
+			}
+			if (ImGui::MenuItem("Quit", "Alt+F4"))
+			{
+
+			}
+			ImGui::EndMenu();
+		}
+		ImGui::EndMainMenuBar();
+	}
+
+	if (openFile)
+	{
+		ImGui::OpenPopup("Open File");
+		openFile = false;
+	}
+
+	if (ImGui::BeginPopupModal("Open File", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		OPENFILENAME ofn;
+		TCHAR szFile[260] = { 0 };
+		ZeroMemory(&ofn, sizeof(ofn));
+		ofn.lStructSize = sizeof(ofn);
+		ofn.hwndOwner = NULL;
+		ofn.lpstrFile = szFile;
+		ofn.lpstrFile[0] = '\0';
+		ofn.nMaxFile = sizeof(szFile);
+		ofn.lpstrFilter = TEXT("All Files\0*.*\0");
+		ofn.nFilterIndex = 1;
+		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+		if (GetOpenFileName(&ofn) == TRUE) 
+		{
+			// 用户选择了文件，你可以在这里处理文件路径szFile
+		}
+		ImGui::EndPopup();
+	}
+
 }
 
 void UIManager::PostUpdate()
 {
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void UIManager::_OnTestEvent(int testNum)
+{
+	if (testNum == 0)
+		testEvent.RemoveAllListeners();
 }
