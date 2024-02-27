@@ -16,6 +16,7 @@ extern "C"
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
 #include "../tools/event/Event.h"
+#include "../tools/util/Singleton.h"
 
 enum class UIStyle
 {
@@ -26,11 +27,14 @@ enum class UIStyle
 	ALTERNATIVE_DARK_STYLE
 };
 
-class UIManager
+class UIManager :public Singleton<UIManager>
 {
+	friend class Singleton<UIManager>;
 public:
-	UIManager(SDL_Window* window, UIStyle style, const std::string& glslVersion);
-	~UIManager();
+	
+
+	void Init(SDL_Window* window, UIStyle style, const std::string& glslVersion);
+	void Destroy();
 
 	void ApplyStyle(UIStyle style);
 	void EnableDocking(bool enableDock);
@@ -42,6 +46,8 @@ public:
 	Tools::Event<int> testEvent;
 
 protected:
+	UIManager() = default;
+	//~UIManager() = default;
 	void _OnTestEvent(int testNum);
 
 private:

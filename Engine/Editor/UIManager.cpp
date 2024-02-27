@@ -1,7 +1,8 @@
 #include "UIManager.h"
 #include <Windows.h>
 
-UIManager::UIManager(SDL_Window* window, UIStyle style, const std::string& glslVersion)
+
+void UIManager::Init(SDL_Window* window, UIStyle style, const std::string& glslVersion)
 {
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
@@ -20,7 +21,7 @@ UIManager::UIManager(SDL_Window* window, UIStyle style, const std::string& glslV
 	testEvent.AddListener(std::bind(&UIManager::_OnTestEvent, this, std::placeholders::_1));
 }
 
-UIManager::~UIManager()
+void UIManager::Destroy()
 {
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL2_Shutdown();

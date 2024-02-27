@@ -137,7 +137,8 @@ int main()
         SDL_Quit();
         return -1;
     }
-	UIManager* uiManager = new UIManager(window, UIStyle::CLASSIC_STYLE, "#version 330");
+	UIManager& uiManager = UIManager::GetInstance();
+	uiManager.Init(window, UIStyle::CLASSIC_STYLE, "#version 330");
 
 	if (!gladLoadGL())
 	{
@@ -147,7 +148,7 @@ int main()
 	Camera* camera = new Camera(glm::vec3(.0f, .0f, 3.0f));
 
 	Shader modelShader("../Engine/Shader/model_loading_vert.glsl", "../Engine/Shader/model_loading_frag.glsl");
-	AiModel aiModel("../Engine/asset/nanosuit.obj");
+	AiModel aiModel("../Engine/asset/WusonOBJ.obj");
 	modelShader.UseShaderProgram();
 
 	bool firstLoad = true;
@@ -158,7 +159,7 @@ int main()
         float currentFrame = (float)SDL_GetTicks() / 1000.0f;
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
-		uiManager->PreUpdate();
+		uiManager.PreUpdate();
 
         glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -175,12 +176,12 @@ int main()
 
 		aiModel.Render(modelShader);
 
-		uiManager->Update();
-		uiManager->PostUpdate();
+		uiManager.Update();
+		uiManager.PostUpdate();
 		SDL_Event event;
 		while (SDL_PollEvent(&event))
 		{
-			uiManager->testEvent.Invoke(10);
+			uiManager.testEvent.Invoke(10);
             ImGui_ImplSDL2_ProcessEvent(&event);
             ProcessEventInScene(camera, event);
             if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
@@ -192,10 +193,9 @@ int main()
 
     SDL_DestroyWindow(window);
     SDL_Quit();
-	delete uiManager;
+	uiManager.Destroy();
 	delete camera;
 	camera = nullptr;
-	uiManager = nullptr;
     
     return 0;
 }

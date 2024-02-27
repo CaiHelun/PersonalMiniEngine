@@ -19,6 +19,7 @@ private:
 	std::vector<MeshVertex> mVertices;
 	std::vector<unsigned int> mIndices;
 	std::vector<Texture> mTextures;
+	std::vector<int>     mTextureUniformLocation;
 
 	unsigned int VAO, VBO, EBO;
 
