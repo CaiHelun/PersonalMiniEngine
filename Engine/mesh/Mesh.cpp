@@ -35,7 +35,7 @@ void Mesh::Render(Shader& shader)
 			mTextureUniformLocation[i] = glGetUniformLocation(shader.ShaderProgramID, name.c_str());
 		}
 		if (mTextureUniformLocation[i] > 0)
-			glUniform1i(mTextureUniformLocation[i], i);
+			glUniform1i(mTextureUniformLocation[i], (GLint)i);
 		glBindTexture(GL_TEXTURE_2D, mTextures[i].mTextureID);
 	}
 	glBindVertexArray(VAO);
