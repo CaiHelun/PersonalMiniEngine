@@ -4,6 +4,12 @@ cmake_minimum_required(VERSION 3.5)
 # 声明项目名称
 project(OpenGLBaseEngine)
 
+set(PROJECT_ROOT_PATH ${CMAKE_SOURCE_DIR})
+set(TEMPLATE_FILE ${CMAKE_SOURCE_DIR}/configuration/root_directory.h.in)
+set(GENERATED_FILE ${CMAKE_BINARY_DIR}/configuration/root_directory.h)
+configure_file(${TEMPLATE_FILE} ${GENERATED_FILE})
+include_directories(${CMAKE_BINARY_DIR}/configuration)
+
 # 引入第三方库
 find_package(OpenGL REQUIRED)
 
