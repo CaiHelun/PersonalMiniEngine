@@ -215,6 +215,22 @@ void UIManager::Update()
 		ImGui::EndMainMenuBar();
 	}
 
+	// 创建Docking空间
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+	ImGui::Begin("DockSpace Demo", NULL, window_flags);
+
+	// DockSpace
+	ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+	ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+
+	// 属性栏窗口
+	ImGui::Begin("Properties");
+	static float value = 0.0f;
+	ImGui::SliderFloat("Value", &value, 0.0f, 1.0f);
+	ImGui::End();
+
+	ImGui::End();
+
 	if (openFile)
 	{
 		ImGui::OpenPopup("Open File");
