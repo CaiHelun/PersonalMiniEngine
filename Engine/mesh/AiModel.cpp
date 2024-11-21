@@ -85,23 +85,23 @@ Mesh AiModel::_ProcessMesh(aiMesh* mesh, const aiScene* scene)
 			vertex.mTexCoord = glm::vec2(.0f);
 
 		vertices.emplace_back(std::move(vertex));
+	}
 
-		for (unsigned int face_i = 0; face_i < mesh->mNumFaces; ++face_i)
-		{
-			aiFace face = mesh->mFaces[face_i];
-			for (unsigned int faceindex_i = 0; faceindex_i < face.mNumIndices; ++faceindex_i)
-				indices.emplace_back(face.mIndices[faceindex_i]);
-		}
+	for (unsigned int face_i = 0; face_i < mesh->mNumFaces; ++face_i)
+	{
+		aiFace face = mesh->mFaces[face_i];
+		for (unsigned int faceindex_i = 0; faceindex_i < face.mNumIndices; ++faceindex_i)
+			indices.emplace_back(face.mIndices[faceindex_i]);
+	}
 
-		if (mesh->mMaterialIndex >= 0)
-		{
-			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-			std::vector<Texture> diffTex = _LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
-			textures.insert(textures.end(), diffTex.begin(), diffTex.end());
+	if (mesh->mMaterialIndex >= 0)
+	{
+		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+		std::vector<Texture> diffTex = _LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+		textures.insert(textures.end(), diffTex.begin(), diffTex.end());
 
-			std::vector<Texture> specTex = _LoadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
-			textures.insert(textures.end(), specTex.begin(), specTex.end());
-		}
+		std::vector<Texture> specTex = _LoadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+		textures.insert(textures.end(), specTex.begin(), specTex.end());
 	}
 
 	return Mesh(vertices, indices, textures);

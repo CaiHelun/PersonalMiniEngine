@@ -17,27 +17,22 @@ void Mesh::Render(Shader& shader)
 	unsigned int diffuseNum = 1;
 	unsigned int specularNum = 1;
 	bool initUniformLocation = false;
-	if (!mTextureUniformLocation.empty() && mTextureUniformLocation[0] != -1)
-		initUniformLocation = true;
 
 	for (size_t i = 0; i < mTextures.size(); ++i)
 	{
 		glActiveTexture(GLenum(GL_TEXTURE0 + i));
-		if (!initUniformLocation)
-		{
-			std::string number;
-			std::string name = mTextures[i].mTextureType;
-			if (name == "texture_diffuse")
-				number = std::to_string(diffuseNum++);
-			else if (name == "texture_specular")
-				number = std::to_string(specularNum++);
-			name += number;
-			mTextureUniformLocation[i] = glGetUniformLocation(shader.ShaderProgramID, name.c_str());
-		}
-		if (mTextureUniformLocation[i] > 0)
-			glUniform1i(mTextureUniformLocation[i], (GLint)i);
+
+		std::string number;
+		std::string name = mTextures[i].mTextureType;
+		if (name == "texture_diffuse")
+			number = std::to_string(diffuseNum++);
+		else if (name == "texture_specular")
+			number = std::to_string(specularNum++);
+		name += number;
+
+		glUniform1i(glGetUniformLocation(shader.ShaderProgramID, name.c_str()), (GLint)i);
 		glBindTexture(GL_TEXTURE_2D, mTextures[i].mTextureID);
-	}
+	}	
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, (GLsizei)mIndices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
