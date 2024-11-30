@@ -4,25 +4,35 @@ cmake_minimum_required(VERSION 3.5)
 # 声明项目名称
 project(OpenGLBaseEngine)
 
+set(PROJECT_ROOT_PATH ${CMAKE_SOURCE_DIR})
+set(TEMPLATE_FILE ${CMAKE_SOURCE_DIR}/configuration/root_directory.h.in)
+set(GENERATED_FILE ${CMAKE_BINARY_DIR}/configuration/root_directory.h)
+configure_file(${TEMPLATE_FILE} ${GENERATED_FILE})
+include_directories(${CMAKE_BINARY_DIR}/configuration)
+
 # 引入第三方库
 find_package(OpenGL REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# 包含项目头文件
-include_directories(${PROJECT_SOURCE_DIR}/include)
-include_directories(${PROJECT_SOURCE_DIR}/include/imgui)
-include_directories(${PROJECT_SOURCE_DIR}/include/glad)
-include_directories(${PROJECT_SOURCE_DIR}/include/SDL2)
+file(GLOB_RECURSE IMGUIFILES
+${PROJECT_SOURCE_DIR}/IMGUI/include/*.h
+${PROJECT_SOURCE_DIR}/IMGUI/source/*.c*
+)
+source_group(TREE ${PROJECT_SOURCE_DIR}/ FILES ${IMGUIFILES})
 
-add_library(IMGUI STATIC
-    ${PROJECT_SOURCE_DIR}/ThirdParty/imgui/imgui.cpp
-    ${PROJECT_SOURCE_DIR}/ThirdParty/imgui/imgui_demo.cpp
-    ${PROJECT_SOURCE_DIR}/ThirdParty/imgui/imgui_draw.cpp
-    ${PROJECT_SOURCE_DIR}/ThirdParty/imgui/imgui_impl_opengl3.cpp
-    ${PROJECT_SOURCE_DIR}/ThirdParty/imgui/imgui_impl_sdl.cpp
-    ${PROJECT_SOURCE_DIR}/ThirdParty/imgui/imgui_tables.cpp
-    ${PROJECT_SOURCE_DIR}/ThirdParty/imgui/imgui_widgets.cpp
+add_library(IMGUI STATIC ${IMGUIFILES})
+
+target_include_directories(IMGUI PUBLIC
+    ${PROJECT_SOURCE_DIR}/IMGUI/include
+)
+
+# 包含项目头文件
+include_directories(
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/glad
+    ${PROJECT_SOURCE_DIR}/include/SDL2
+    ${PROJECT_SOURCE_DIR}/include/assimp
 )
 
 set(SDL2_PATH ${PROJECT_SOURCE_DIR}/ThirdParty/SDL2/lib/x64)
@@ -31,22 +41,35 @@ set_target_properties(SDL2 PROPERTIES
     IMPORTED_IMPLIB ${SDL2_PATH}/SDL2.lib
 )
 
+set(ASSIMP_PATH ${PROJECT_SOURCE_DIR}/ThirdParty/assimp)
+add_library(ASSIMP SHARED IMPORTED)
+set_target_properties(ASSIMP PROPERTIES
+    IMPORTED_IMPLIB ${ASSIMP_PATH}/assimp-vc142-mt.lib
+)
+
 target_link_libraries(IMGUI
     SDL2
+    ASSIMP
     OpenGL::GL
 )
 
+include_directories(${PROJECT_SOURCE_DIR}/Engine/glm)
+
+file(GLOB_RECURSE ENGINEFILES
+${PROJECT_SOURCE_DIR}/Engine/*.h
+${PROJECT_SOURCE_DIR}/Engine/*.c*
+${PROJECT_SOURCE_DIR}/Engine/Shader/*.glsl
+)
+source_group(TREE ${PROJECT_SOURCE_DIR}/ FILES ${ENGINEFILES})
 # 生成可执行文件
-add_executable(${PROJECT_NAME} 
-    ./main.cpp 
-    ./glad.c
+add_executable(${PROJECT_NAME} ${ENGINEFILES}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE IMGUI)
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                       "${SDL2_PATH}/SDL2.dll"
+                       "${SDL2_PATH}/SDL2.dll" "${ASSIMP_PATH}/assimp-vc142-mt.dll"
                        $<TARGET_FILE_DIR:${PROJECT_NAME}>)
 
 # # 链接第三方库
